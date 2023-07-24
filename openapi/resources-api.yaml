@@ -1,0 +1,3306 @@
+openapi: 3.0.0
+info:
+  title: Destiny API -- Resources
+  description: Destiny API for managing resources
+  version: 1.4.0
+servers:
+  - url: '/api/v{apiVersion}/rest/context/{contextName}'
+    variables:
+      apiVersion:
+        default: '1'
+        description: Major version
+      contextName:
+        default: destiny
+        description: >-
+          This identifies which Destiny district needs to be accessed.  If the
+          Destiny server being accessed does not host multiple districts, the
+          value for this can be set to "destiny"
+  - url: '/api/v{apiVersion}/rest'
+    variables:
+      apiVersion:
+        default: '1'
+        description: Major version of the API being used
+paths:
+  '/materials/resourcetypes':
+    get:
+      summary: Get resource type hierarchy
+      description: >-
+        This API can be used to obtain a hierarchy of resource types.<br>
+        Each node is composed of:
+        <ul>
+        <li>The id in the database,</li>
+        <li>The guid in the database,</li>
+        <li>The resource type name, and</li>
+        <li>List of child resource types</li>
+        </ul>
+      operationId: get-resource-type-hierarchy
+      tags:
+        - resources
+      responses:
+        '200':
+          description: >-
+            The requested information was successfully obtained.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BriefResourceType'
+              example:
+                id: 1
+                guid: 'F7449399-97F4-4780-9EFD-136E16871CCA'
+                name: 'Resources'
+                nameFields:
+                  - id: 1
+                children:
+                  - id: 2
+                    guid: '815DB38F-D433-462C-BFB4-3807FEE6444C'
+                    name: 'Textbooks'
+                    nameFields:
+                    - id: 29
+                    children:
+                      - id: 100
+                        guid: '28C03F7A-7934-44D9-93C8-2885172BC6DF'
+                        name: 'Children''s Books'
+                        nameFields:
+                        - id: 103
+                  - id: 200
+                    guid: 'AECDD3A1-EE4C-490F-9B0E-DAA9484FE6AB'
+                    name: 'Computers'
+                    nameFields:
+                      - id: 100
+                      - id: 105
+                      - id: 102
+                      - id: 101
+                    children:
+                      - id: 201
+                        guid: 'DA9A7E30-645A-4A28-B950-506664B920A0'
+                        name: 'Software'
+                        softwareResourceTypeIdAssignment: 200
+                        nameFields:
+                        - id: 104
+        '201':
+          description: 'There are no resource types to display.  This can occur if the district does not have Resource Manager.'
+        '401':
+          description: 'The access token is invalid, expired, or missing.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                  message: 'Access token is missing or invalid'
+                  target: accessToken
+        '403':
+          description: >-
+            Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                  message: 'Insufficient permissions to access API'
+                  target: CatAssetSearchAssets
+        '500':
+          description: 'This is an unexpected fault/error in the server.'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                error:
+                  code: CODE_INTERNAL_SERVER_ERROR
+                  message: 'Something bad happened in the server'
+                  logId: kxEtz
+  '/materials/resourcetypes/{resourceType}':
+      get:
+        summary: Get specific resource type
+        description: >-
+          This API can be used to obtain a specific resource type by database id, GUID, or resource type name.<br>
+          The path for locating resource types by name must be hierarchical. <br>
+          <strong>Example: /api/rest/v1/materials/resourcetypes/resources/textbooks/digital%20materials/</strong>
+        operationId: get-resource-type
+        tags:
+          - resources
+        parameters:
+        - name: resourceType
+          in: path
+          description: >-
+            Database ID, GUID, or resource type name
+          required: true
+          schema:
+            type: string
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResourceType'
+                example:
+                  id: 5
+                  guid: '49E748B6-FAB6-4080-8729-CF77137D89D6'
+                  name: 'Electronics'
+                  nameFields:
+                    - id: 100
+                    - id: 105
+                    - id: 102
+                    - id: 101
+                  resourceFields:
+                    - name: 'Bin Location'
+                      id: 1
+                      dataType: 'text'
+                      systemDefined: true
+                      editable: true
+                      required: false
+                  itemFields:
+                    - name: 'Purchase Price'
+                      id: 2
+                      dataType: 'currency'
+                      systemDefined: false
+                      editable: true
+                      required: false
+                    - name: 'Color'
+                      id: 100
+                      dataType: 'dropdown'
+                      systemDefined: false
+                      editable: true
+                      required: false
+                      options:
+                        - id: 1
+                          name: 'Blue'
+                        - id: 2
+                          name: 'Green'
+                        - id: 3
+                          name: 'Red'
+
+                  children:
+                    - id: 100
+                      guid: "412BAE3C-7AC2-4040-BF27-8F828ACA7D82"
+                      name: 'Tablets'
+                    - id: 200
+                      guid: "7202039B-0FF9-4422-A3CD-652472B243AE"
+                      name: 'Software'
+                      softwareResourceTypeIdAssignment: 100
+                  parent:
+                    id: 1
+                    guid: "6A67FD7D-51E7-4A97-8A3F-AEC23236636A"
+                    name: 'Resources'
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '404':
+            description: >-
+              The resource type could not be found.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_NOT_FOUND
+                    message: 'Could not find resource type with identifier(s): ''50'''
+
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resources/{id}':
+      get:
+        summary: Get specific resource
+        description: >-
+          This API can be used to obtain a specific resource by database ID or GUID.
+        operationId: get-resource
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: >-
+            The database ID or GUID used to look up the resource
+          required: true
+          schema:
+            type: string
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Resource'
+                example:
+                  id: 5
+                  guid: '49E748B6-FAB6-4080-8729-CF77137D89D6'
+                  name: 'Dell Precision 1500T'
+                  resourceType:
+                    id: 10
+                    guid: "91717DE1-71C7-43C1-989B-9390C17E29ED"
+                    name: 'Computers'
+                  resourceFields:
+                    - id: 15
+                      name: 'Color'
+                      value: 'Blue'
+                    - id: 20
+                      name: 'Processor'
+                      value: 'Intel'
+                  items:
+                    barcodedCount: 10
+                    unbarcodedCount: 5
+                  components:
+                    - id: 30
+                      name: 'Power cord'
+                      quantity: 1
+                      referenceId: 'P500'
+                      price:
+                        amount: 15.55
+                        currencyUnit: 'USD'
+                      fineable: true
+                    - id: 35
+                      name: 'Network cable'
+                      quantity: 1
+                      referenceId: 'P501'
+                      price:
+                        amount: 7.01
+                        currencyUnit: 'USD'
+                      fineable: false
+          '400':
+            description: 'The identifier is for a material that is not a resource.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_BAD_REQUEST
+                    message: '55 is not a valid resource identifier'
+                    target: 55
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '404':
+            description: >-
+              The resource could not be found.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_NOT_FOUND
+                    message: 'Could not find resource with identifier: 55'
+                    target: 55
+
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+      put:
+        summary: Create or update a resource
+        description: 'This API can be used to create or update a resource. Note: To avoid inadvertently clearing out field values of Resources and Items, make sure to first GET a full record for the resource/item you wish to change before PUTting the complete record with your desired updates.'
+        operationId: create-or-update-resource
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: 'A GUID that uniquely identifies the resource.'
+          required: true
+          schema:
+            type: string
+        - name: disableStrictFieldValidation
+          in: query
+          description: 'Turns off strict field value validation when true, defaults to false when unspecified. When true the response body will contain details about any invalid field values that were not applied to the resource.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceRequest'
+              example:
+                  resourceTypeId: F7449399-97F4-4780-9EFD-136E16871CCA
+                  resourceFields:
+                    - id: 15
+                      value: 'Blue'
+                    - id: 20
+                      value: 'Intel'
+                    - id: 30
+                      value: '123.45'
+                      rule:  [{ "name": "CREATE_ONLY", "value": "true" }]
+        responses:
+          '200':
+            description: 'The requested resource was successfully updated with details in the response body.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+
+          '201':
+            description: 'The requested resource was successfully created. Details may be returned in the response body if ''disableStrictFieldValidation'' was set to true in the request.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+
+          '204':
+            description: 'The requested resource was successfully updated.'
+
+          '400':
+            description: 'A required resource field was not provided.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_REQUIRED_FIELD
+                    message: 'Missing Required Fields'
+                    target: "49E748B6-FAB6-4080-8729-CF77137D89D6"
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetAddAssetSpec
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz'
+      patch:
+        summary: Create or update a resource
+        description: 'This API can be used to create or update a resource.'
+        operationId: create-or-update-resource
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: 'A GUID that uniquely identifies the resource.'
+          required: true
+          schema:
+            type: string
+        - name: disableStrictFieldValidation
+          in: query
+          description: 'Turns off strict field value validation when true, defaults to false when unspecified. When true the response body will contain details about any invalid field values that were not applied to the resource.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceRequest'
+              example:
+                  resourceTypeId: F7449399-97F4-4780-9EFD-136E16871CCA
+                  resourceFields:
+                    - id: 15
+                      value: 'Blue'
+                    - id: 20
+                      value: 'Intel'
+                    - id: 30
+                      value: '123.45'
+                      rule:  [{ "name": "CREATE_ONLY", "value": "true" }]
+        responses:
+          '200':
+            description: 'The requested resource was successfully updated with details in the response body.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+
+          '201':
+            description: 'The requested resource was successfully created. Details may be returned in the response body if ''disableStrictFieldValidation'' was set to true in the request.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+
+          '204':
+            description: 'The requested resource was successfully updated.'
+
+          '400':
+            description: 'A required resource field was not provided.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_REQUIRED_FIELD
+                    message: 'Missing Required Fields'
+                    target: "49E748B6-FAB6-4080-8729-CF77137D89D6"
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetAddAssetSpec
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resources/{id}/digitalcontent':
+      get:
+        summary: Gets list of digital content available for this resource
+        description: >-
+          This API can be used to get a list of digital content available for this resource.
+
+          This path is synonymous with the following paths: <br/>
+          <ul>
+          <li>'/materials/resourcetypes/{resourcetype_id}/resources/{id}/digitalcontent'</li>
+          <li>'/materials/resourcetypes/{resourcetype_name}/resources/{id}/digitalcontent'</li>
+          </ul>
+        operationId: get-resource-digital-content-list
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: >-
+            The database ID or GUID of the resource associated with the digital content
+          required: true
+          schema:
+            type: string
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/DigitalContentCollection'
+                example:
+                  value:
+                    - id: 5
+                      description: 'Video describing test setup'
+                      type: 'url'
+                      externalURL: 'https://mytest.org'
+                      displaysInMyInfo: true
+                    - id: 6
+                      description: 'Spreadsheet describing test array'
+                      type: 'file'
+                      displaysInMyInfo: false
+          '400':
+            description: 'The identifier is for a material that is not a resource.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_BAD_REQUEST
+                    message: '55 is not a valid resource identifier'
+                    target: 55
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '404':
+            description: >-
+              The requested digital content could not be found.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_NOT_FOUND
+                    message: 'Could not find resource'
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resources/{resource_id}/digitalcontent/{id}':
+      get:
+        summary: Download digital content file available for this resource
+        description: >-
+          This API can be used to download a digital content file for a specific resource.
+
+          This path is synonymous with the following paths: <br/>
+          <ul>
+          <li>'/materials/resourcetypes/{resourcetype_id}/resources/{resource_id}/digitalcontent/{id}'</li>
+          <li>'/materials/resourcetypes/{resourcetype_name}/resources/{resource_id}/digitalcontent/{id}'</li>
+          </ul>
+        operationId: download-resource-digital-content
+        tags:
+          - resources
+        parameters:
+        - name: resource_id
+          in: path
+          description: >-
+            The database ID or GUID of the resource associated with the digital content
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: >-
+            The identifier of the of the digital content to download
+          required: true
+          schema:
+            type: string
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained. This returns a raw byte stream.
+            content:
+              application/octect-stream:
+                schema:
+                  type: string
+                  format: binary
+          '400':
+            description: 'If the digital content requested is for an external URL, return bad request'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_BAD_REQUEST
+                    message: '<id> content is not a file'
+                    target: <id>
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '404':
+            description: >-
+              If any component of the path (resource type, resource, digital content) does not exist, return a not found status
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_NOT_FOUND
+                    message: 'Could not find digital content'
+
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resources/items':
+      get:
+        summary: Get all items
+        description: >-
+          This API can be used to obtain a list of all items.
+
+          This API uses the Open Data specification (OData) for pagination.
+        operationId: get-items
+        tags:
+          - resources
+        parameters:
+        - name: checkoutPatronBarcode
+          in: query
+          description: >-
+            Limit results to items checked out to the patron with the supplied barcode.
+          required: false
+          schema:
+            type: string
+        - name: checkoutPatronId
+          in: query
+          description: >-
+            Limit results to items checked out to the patron with the supplied patron id or guid.
+          required: false
+          schema:
+            type: string
+        - name: siteShortName
+          in: query
+          description: >-
+            Limit results to items associated with the site referenced by the supplied site short name.
+          required: false
+          schema:
+            type: string
+        - name: districtId
+          in: query
+          description: >-
+            Limit results by item district id.
+          required: false
+          schema:
+            type: string
+        - name: itemBarcode
+          in: query
+          description: >-
+            Limit results by item barcode.
+          required: false
+          schema:
+            type: string
+        - name: includeCurrentCheckout
+          in: query
+          description: >-
+            Includes current checkout information.  Default to false.
+          required: false
+          schema:
+            type: boolean
+        - name: modifiedSince
+          in: query
+          description: >-
+            Limit results that have been modified since a particular ISO 8601 date and time.
+          required: false
+          schema:
+            type: string
+        - name: $top
+          in: query
+          description: >-
+            The number of rows to return.  Default to 25.
+          required: false
+          schema:
+            type: integer
+        - name: $skip
+          in: query
+          description: >-
+            The number of rows to skip.  Default to 0.
+          required: false
+          schema:
+            type: integer
+        - name: $orderby
+          in: query
+          description: >-
+            Which fields to order by.  Default to ID of the item.  This is a normative OData expression.<br/>
+            <strong>Example: barcode desc, id</strong><br/>
+            These are the columns that can be sorted by:
+            <ul>
+            <li>id</li>
+            <li>barcode</li>
+            </ul>
+          required: false
+          schema:
+            type: string
+        - name: $count
+          in: query
+          description: >-
+            This OData query parameter indicates to return the number of results instead of the actual results.
+            This changes the content-type header to text/plain and returns a simple integer as a response.
+            Paging parameters are ignored in this case.  This defaults to false.
+          required: false
+          schema:
+            type: boolean
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ItemCollection'
+                example:
+                  value:
+                    - id: 5
+                      guid: '49E748B6-FAB6-4080-8729-CF77137D89D6'
+                      barcode: '00000000000001'
+                      serialNumber: 'WKJA-0123-ACDE'
+                      status: 'available'
+                      resourceType:
+                        id: 10
+                        guid: 'A0F94737-BDB6-441E-B1F5-1DD6C9746AE0'
+                        name: 'Computers'
+                      resource:
+                        id: 201
+                        guid: '79119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Dell Inspiron 2456'
+                      site:
+                        internalId: 187
+                        guid: '32ef328d-0016-4625-82fa-d497e8e942f0'
+                      checkout:
+                        patronId: 100
+                        patronGUID: '79119AC-A2FE-4565-81B6-D900A63065DB'
+                        districtId: 'ABCDEFG'
+                        lastName: 'Doe'
+                        firstName: 'John'
+                        middleName: 'Edwardo'
+                        lastFirstMiddleName: 'Doe, John Edwardo'
+                        emailAddress1: 'johndoe@googleyeyes.com'
+                        dateOut: '2020-10-21T13:00:00.0Z'
+                        dateDue: '2020-10-27T00:00:00.0Z'
+                      itemFields:
+                        - id: 1
+                          name: 'Barcode'
+                          value: '00000000000001'
+                        - id: 15
+                          name: 'Status'
+                          value: 'Available'
+                        - id: 20
+                          name: 'Date Acquired'
+                          value: '2018-92-27T13:27:25.0Z'
+                      itemNotes:
+                        - id: 25
+                          text: 'Make sure power cord is present'
+                          urgent: true
+                        - id: 30
+                          text: 'Broken enter key'
+                          urgent: false
+                      historicalNotes:
+                        - id: 35
+                          text: 'Repaired broken hinge'
+                    - id: 6
+                      guid: '2D1DA50A-6522-4456-9112-43245D4F8D76'
+                      barcode: '00000000000002'
+                      status: 'available'
+                      resourceType:
+                        id: 10
+                        guid: "AC5CA015-0955-4768-8D88-02DB3C56230C"
+                        name: 'Computers'
+                      resource:
+                        id: 201
+                        guid: '79119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Dell Inspiron 2456'
+                      itemFields:
+                        - id: 1
+                          name: 'Barcode'
+                          value: '00000000000002'
+                        - id: 15
+                          name: 'Status'
+                          value: 'Available'
+                        - id: 20
+                          name: 'Date Acquired'
+                          value: '2018-92-28T13:28:25.0Z'
+                      itemNotes:
+                        - id: 25
+                          text: 'Make sure power supply is present'
+                          urgent: true
+                        - id: 30
+                          text: 'Broken space key'
+                          urgent: false
+                      historicalNotes:
+                        - id: 35
+                          text: 'Repaired broken hinge'
+                  '@nextLink': '/materials/resources/{id}/items?%24top=25&%24skip=100&%24orderby=id'
+                  durationMillis: 42
+          '400':
+            description: 'The query parameter has an invalid value.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_BAD_REQUEST
+                    message: '''ten'' is an invalid value for checkoutPatronId'
+                    target: '$top'
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resources/items/{id}':
+      get:
+        summary: Get specific item
+        description: >-
+          This API can be used to obtain a specific item by database ID or GUID.
+
+          This path is synonymous with the following paths: <br/>
+          <ul>
+          <li>'/materials/items/{id}'</li>
+          <li>'/materials/resources/{res_id}/items/{id}'</li>
+          <li>'/materials/resourcetypes/{resourcetype_id}/resources/{res_id}/items/{id}'</li>
+          <li>'/materials/resourcetypes/{resourcetype_name}/resources/{res_id}/items/{id}'</li>
+          </ul>
+        operationId: get-item
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: >-
+            The database ID or GUID used to look up the item
+          required: true
+          schema:
+            type: string
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Item'
+                example:
+                  id: 5
+                  guid: '49E748B6-FAB6-4080-8729-CF77137D89D6'
+                  barcode: '00000000000001'
+                  status: 'available'
+                  resourceType:
+                    id: 10
+                    guid: '379119AC-A2FE-4565-81B6-D900A63065DB'
+                    name: 'Computers'
+                  itemFields:
+                    - id: 1
+                      name: 'Barcode'
+                      value: '00000000000001'
+                    - id: 15
+                      name: 'Status'
+                      value: 'Available'
+                    - id: 20
+                      name: 'Date Acquired'
+                      value: '2018-92-27T13:27:25.0Z'
+                  itemNotes:
+                    - id: 25
+                      text: 'Make sure power cord is present'
+                      urgent: true
+                    - id: 30
+                      text: 'Broken enter key'
+                      urgent: false
+                  historicalNotes:
+                    - id: 35
+                      text: 'Repaired broken hinge'
+          '400':
+            description: 'The identifier is for a material that is not a resource item'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_BAD_REQUEST
+                    message: '135 is not a valid item identifier'
+                    target: 135
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '404':
+            description: >-
+              Could not find item with identifiers: "55"
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_NOT_FOUND
+                    message: 'Could not find item'
+
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+      put:
+        summary: Create or update an item
+        description: >-
+          This API can be used to create or update an item. Note: To avoid inadvertently clearing out field values of Resources and Items, make sure to first GET a full record for the resource/item you wish to change before PUTting the complete record with your desired updates.
+
+          This path is synonymous with the following paths: <br/>
+          <ul>
+          <li>'/materials/items/{id}'</li>
+          </ul>
+        operationId: create-or-update-item
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: 'A GUID that uniquely identifies the created item.'
+          required: true
+          schema:
+            type: string
+        - name: disableStrictFieldValidation
+          in: query
+          description: 'Turns off strict field value validation when true, defaults to false when unspecified. When true the response body will contain details about any invalid field values that were not applied to the item.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: updateDuplicateByDistrictId
+          in: query
+          description: 'Determines what to do when an item is found to already exist in Destiny with the provided districtId. Defaults to false when unspecified. When true, the existing item''s GUID will be changed to the provided GUID in the path.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: updateDuplicateByBarcode
+          in: query
+          description: 'Determines what to do when an item is found to already exist in Destiny with the provided barcode. Defaults to false when unspecified. When true, the existing item''s GUID will be changed to the provided GUID in the path.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemRequest'
+              example:
+                  resourceId: F7449399-97F4-4780-9EFD-136E16871CCA
+                  siteId: 11BAC758-4C54-4451-BD2A-60BBD31681C0
+                  itemFields:
+                    - id: 1
+                      value: '00000000000001'
+                    - id: 15
+                      value: 'Available'
+                    - id: 20
+                      value: '2018-92-27T13:27:25.0Z'
+                    - id: 30
+                      value: '123.45'
+                      rule:  [{ "name": "CREATE_ONLY", "value": "true" }]
+        responses:
+          '200':
+            description: 'The requested item was successfully updated with details in the response body. Use of updateDuplicateByDistrictId or updateDuplicateByBarcode will also be reported in the response body.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+
+          '201':
+            description: 'The requested item was successfully created. Details may be returned in the response body if ''disableStrictFieldValidation'' was set to true in the request.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+          '204':
+            description: 'The requested item was successfully updated.'
+          '400':
+            description: 'A required item field was not provided.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_REQUIRED_FIELD
+                    message: 'Missing Required Fields'
+                    target: "49E748B6-FAB6-4080-8729-CF77137D89D6"
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetAddAsset
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+      patch:
+        summary: Create or update an item
+        description: >-
+          This API can be used to create or update an item.
+
+          This path is synonymous with the following paths: <br/>
+          <ul>
+          <li>'/materials/items/{id}'</li>
+          </ul>
+        operationId: patch-item
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: 'A GUID that uniquely identifies the created item.'
+          required: true
+          schema:
+            type: string
+        - name: disableStrictFieldValidation
+          in: query
+          description: 'Turns off strict field value validation when true, defaults to false when unspecified. When true the response body will contain details about any invalid field values that were not applied to the item.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: updateDuplicateByDistrictId
+          in: query
+          description: 'Determines what to do when an item is found to already exist in Destiny with the provided districtId. Defaults to false when unspecified. When true, the existing item''s GUID will be changed to the provided GUID in the path.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: updateDuplicateByBarcode
+          in: query
+          description: 'Determines what to do when an item is found to already exist in Destiny with the provided barcode. Defaults to false when unspecified. When true, the existing item''s GUID will be changed to the provided GUID in the path.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemRequest'
+              example:
+                  resourceId: F7449399-97F4-4780-9EFD-136E16871CCA
+                  siteId: 11BAC758-4C54-4451-BD2A-60BBD31681C0
+                  itemFields:
+                    - id: 1
+                      value: '00000000000001'
+                    - id: 15
+                      value: 'Available'
+                    - id: 20
+                      value: '2018-92-27T13:27:25.0Z'
+                    - id: 30
+                      value: '123.45'
+                      rule:  [{ "name": "CREATE_ONLY", "value": "true" }]
+        responses:
+          '200':
+            description: 'The requested item was successfully updated with details in the response body. Use of updateDuplicateByDistrictId or updateDuplicateByBarcode will also be reported in the response body.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+
+          '201':
+            description: 'The requested item was successfully created. Details may be returned in the response body if ''disableStrictFieldValidation'' was set to true in the request.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+          '204':
+            description: 'The requested item was successfully updated.'
+          '400':
+            description: 'A required item field was not provided.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_REQUIRED_FIELD
+                    message: 'Missing Required Fields'
+                    target: "49E748B6-FAB6-4080-8729-CF77137D89D6"
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetAddAsset
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+      delete:
+        summary: Delete an item
+        description: >-
+          This API can be used to delete an item.
+
+          This path is synonymous with the following paths: <br/>
+          <ul>
+          <li>'/materials/items/{id}'</li>
+          <li>'/materials/resources/{res_id}/items/{id}'</li>
+          <li>'/materials/resourcetypes/{resourcetype_id}/resources/{res_id}/items/{id}'</li>
+          <li>'/materials/resourcetypes/{resourcetype_name}/resources/{res_id}/items/{id}'</li>
+          </ul>
+        operationId: delete-item
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: 'The database ID or GUID of the item to be deleted.'
+          required: true
+          schema:
+            type: string
+        - name: confirmDelete
+          in: query
+          description: 'when supplied and is true, the process will delete an item regardless of its current status. If it is set to false or not included, the process will not delete items with certain statuses'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        responses:
+          '204':
+            description: 'The requested item was successfully deleted.'
+          '400':
+            description: 'A required item field was not provided or the copy could not be deleted.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_COPY_CHECKED_OUT
+                    message: 'Copy with identifier 49E748B6-FAB6-4080-8729-CF77137D89D6 is checked out to patron and cannot be deleted.'
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetDeleteAsset
+          '404':
+            description: >-
+              The item could not be found.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_ITEM_NOT_FOUND
+                    message: 'Copy with identifier (456789) could not be found'
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/items/{id}/status':
+      put:
+        summary: Update the status of an item
+        description: >-
+          This API can be used to update the status of an item. This API supports the following statuses*: <br/>
+          <ul>
+          <li>'Approved for Disposal'</li>
+          <li>'Available'</li>
+          <li>'Available for Parts'</li>
+          <li>'Checked Out' - <em>Special rules apply, see table below for details.</em></li>
+          <li>'In Use'</li>
+          <li>'Loaned Out'</li>
+          <li>'Lost' - <em>Special rules apply, see table below for details.</em></li>
+          <li>'No Longer in Use'</li>
+          <li>'Out for Repairs'</li>
+          <li>'Ready for Disposal'</li>
+          <li>'Retired'</li>
+          <li>'Returned to Vendor'</li>
+          <li>'Stolen' - <em>Special rules apply, see table below for details.</em></li>
+          </ul>
+          *<strong>Note: software license status updates are not supported.</strong><br/>
+          The following status updates are supported: <br/>
+          <table>
+          <thead>
+            <tr>
+              <th>Current Item Status</th>
+              <th>New Item Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Approved for Disposal</td>
+              <td>All supported statuses - <em>except for 'Checked Out'</em></td>
+            </tr>
+            <tr>
+              <td>Available</td>
+              <td>All supported statuses - <em>except for 'Checked Out'</em></td>
+            </tr>
+            <tr>
+              <td>Available for Parts</td>
+              <td>All supported statuses - <em>except for 'Checked Out'</em></td>
+            </tr>
+            <tr>
+              <td><strong>Checked Out</strong></td>
+              <td><strong>Lost, Stolen</strong></td>
+            </tr>
+            <tr>
+              <td>In Use</td>
+              <td>All supported statuses - <em>except for 'Checked Out'</em></td>
+            </tr>
+            <tr>
+              <td>Loaned Out</td>
+              <td>All supported statuses - <em>except for 'Checked Out'</em></td>
+            </tr>
+            <tr>
+              <td><strong>Lost</strong></td>
+              <td><strong>Available, Stolen</strong></td>
+            </tr>
+            <tr>
+              <td>No Longer in Use</td>
+              <td>All supported statuses - <em>except for 'Checked Out'</em></td>
+            </tr>
+            <tr>
+              <td>Out for Repairs</td>
+              <td>All supported statuses - <em>except for 'Checked Out'</em></td>
+            </tr>
+            <tr>
+              <td>Ready for Disposal</td>
+              <td>All supported statuses - <em>except for 'Checked Out'</em></td>
+            </tr>
+            <tr>
+              <td>Retired</td>
+              <td>All supported statuses - <em>except for 'Checked Out'</em></td>
+            </tr>
+            <tr>
+              <td>Returned to Vendor</td>
+              <td>All supported statuses - <em>except for 'Checked Out'</em></td>
+            </tr>
+            <tr>
+              <td><strong>Stolen</strong></td>
+              <td><strong>Available, Lost</strong></td>
+            </tr>
+          </tbody>
+          </table><br/>
+          This path is synonymous with the following paths: <br/>
+          <ul>
+          <li>'/materials/resources/items/{id}/status'</li>
+          <li>'/materials/resources/{res_id}/items/{id}/status'</li>
+          <li>'/materials/resourcetypes/{resourcetype_id}/resources/{res_id}/items/{id}/status'</li>
+          <li>'/materials/resourcetypes/{resourcetype_name}/resources/{res_id}/items/{id}/status'</li>
+          </ul>
+        operationId: update-item-status
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: 'The database ID or GUID of the item.'
+          required: true
+          schema:
+            type: string
+        - name: expectedCurrentItemStatus
+          in: query
+          description: 'When supplied, ensures the current status of the item (before updating) matches this status value. If this supplied status does not match, a BAD_REQUEST response will be returned.'
+          required: false
+          schema:
+            type: string
+            default: null
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemStatusRequest'
+        responses:
+          '204':
+            description: 'The requested item was successfully updated.'
+          '400':
+            description: 'An invalid item status change was requested.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/CreateUpdateDetail'
+                example:
+                  error:
+                    code: CODE_UNSUPPORTED_ITEM_STATUS
+                    message: 'Unsupported Item Status (Unsupported Status)'
+                    target: "/materials/resources/items/49E748B6-FAB6-4080-8729-CF77137D89D6/status"
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetAddAsset
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resources/items/{id}/digitalcontent':
+      get:
+        summary: Gets list of digital content available for this resource item
+        description: >-
+          This API can be used to get a list of digital content available for this resource by database ID or GUID
+
+          This path is synonymous with the following paths: <br/>
+          <ul>
+          <li>'/materials/resources/{resource_id}/items/{id}/digitalcontent'</li>
+          <li>'/materials/resourcetypes/{resourcetype_id}/resources/{resource_id}/items/{id}/digitalcontent'</li>
+          <li>'/materials/resourcetypes/{resourcetype_name}/resources/{resource_id}/items/{id}/digitalcontent'</li>
+          </ul>
+        operationId: get-resource-item-digital-content-list
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: >-
+            The database ID or GUID of the resource item associated with the digital content
+          required: true
+          schema:
+            type: string
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/DigitalContentCollection'
+                example:
+                  value:
+                    - id: 5
+                      name: 'Video describing test setup'
+                      type: 'url'
+                      externalURL: 'https://mytest.org'
+                      displaysInMyInfo: true
+                    - id: 6
+                      name: 'Spreadsheet describing test array'
+                      type: 'file'
+                      displaysInMyInfo: false
+          '400':
+            description: 'The identifier is for a material that is not a resource'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_BAD_REQUEST
+                    message: '<id> is not a valid resource identifier'
+                    target: <id>
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '404':
+            description: >-
+              Could not find resource with identifier: "55"
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_NOT_FOUND
+                    message: 'Could not find resource item'
+
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resources/items/{item_id}/digitalcontent/{id}':
+      get:
+        summary: Download digital content file available for this resource item
+        description: >-
+          This API can be used to download a digital content file for a specific resource item
+
+          This path is synonymous with the following paths: <br/>
+          <ul>
+          <li>'/materials/resources/{resource_id}/items/{item_id}/digitalcontent/{id}'</li>
+          <li>'/materials/resourcetypes/{resourcetype_id}/resources/{resource_id}/items/{item_id}/digitalcontent/{id}'</li>
+          <li>'/materials/resourcetypes/{resourcetype_name}/resources/{resource_id}/items/{item_id}/digitalcontent/{id}'</li>
+          </ul>
+        operationId: download-resource-item-digital-content
+        tags:
+          - resources
+        parameters:
+        - name: item_id
+          in: path
+          description: >-
+            The database ID or GUID of the resource item associated with the digital content
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: >-
+            The identifier of the of the digital content to download
+          required: true
+          schema:
+            type: string
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained. This returns a raw byte stream.
+            content:
+              application/octect-stream:
+                schema:
+                  type: string
+                  format: binary
+          '400':
+            description: 'If the digital content requested is for an external URL, return bad request'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_BAD_REQUEST
+                    message: '<id> content is not a file'
+                    target: <id>
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '404':
+            description: >-
+              If any component of the path (resource type, resource, item, digital content) does not exist, return a not found status
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_NOT_FOUND
+                    message: 'Could not find digital content'
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resourcetypes/{id}/resources':
+      get:
+        summary: Get resources by resource type
+        description: >-
+          This API can be used to obtain a list of resources by resource type by database ID, GUID, or name.
+
+          This API uses the Open Data specification (OData) for pagination.
+          This path is synonymous with the following path: <br/>
+          <ul>
+          <li>/materials/resourcetypes/{name}/resources</li>
+          </ul>
+          The path for locating resource types by name must be hierarchical: <br/>
+          <strong>Example: /api/rest/v1/materials/resourcetypes/resources/textbooks/digital%20materials/resources/</strong>
+        operationId: get-resources-by-resource-type
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: >-
+            The database ID, GUID, or name used to look up resources by resource type.
+          required: true
+          schema:
+            type: string
+        - name: $top
+          in: query
+          description: >-
+            The number of rows to return.  Default to 25.
+          required: false
+          schema:
+            type: integer
+        - name: $skip
+          in: query
+          description: >-
+            The number of rows to skip.  Default to 0.
+          required: false
+          schema:
+            type: integer
+        - name: $orderby
+          in: query
+          description: >-
+            Which fields to order by.  Default to ID of the resource.  This is a normative OData expression.<br/>
+            <strong>Example: resourcetype desc,id</strong><br/>
+            These are the columns that can be sorted by:
+            <ul>
+            <li>id</li>
+            <li>name</li>
+            <li>resourceType</li>
+            </ul>
+          required: false
+          schema:
+            type: string
+        - name: $count
+          in: query
+          description: >-
+            This OData query parameter indicates to return the number of results instead of the actual results.
+            This changes the content-type header to text/plain and returns a simple integer as a response.
+            Paging parameters are ignored in this case.  This defaults to false.
+          required: false
+          schema:
+            type: boolean
+        - name: name
+          in: query
+          description: An additional filter to limit the returned resources by their full displayable name.  This query parameter is supported as of version 1.6.0
+          required: false
+          schema:
+            type: string
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ResourceCollection'
+                example:
+                  value:
+                    - id: 5
+                      guid: '3597E573-A75F-42B7-93DE-45A8A28940B9'
+                      name: 'Dell Precision 1500T'
+                      resourceType:
+                        id: 10
+                        guid: '379119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Computers'
+                      resourceFields:
+                        - id: 15
+                          name: 'Color'
+                          value: 'Blue'
+                        - id: 20
+                          name: 'Processor'
+                          value: 'Intel'
+                      items:
+                        barcodedCount: 10
+                        unbarcodedCount: 5
+                      components:
+                        - id: 30
+                          name: 'Power cord'
+                          quantity: 1
+                          referenceId: 'P500'
+                          price:
+                            amount: 15.55
+                            currencyUnit: 'USD'
+                          fineable: true
+                        - id: 35
+                          name: 'Network cable'
+                          quantity: 1
+                          referenceId: 'P501'
+                          price:
+                            amount: 7.01
+                            currencyUnit: 'USD'
+                          fineable: false
+                    - id: 6
+                      guid: '49E748B6-FAB6-4080-8729-CF77137D89D6'
+                      name: 'Dell Inspiron 1500'
+                      resourceType:
+                        id: 10
+                        guid: '379119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Computers'
+                      resourceFields:
+                        - id: 15
+                          name: 'Color'
+                          value: 'Grey'
+                        - id: 20
+                          name: 'Processor'
+                          value: 'AMD'
+                      items:
+                        barcodedCount: 50
+                        unbarcodedCount: 11
+                      components:
+                        - id: 30
+                          name: 'Power cord'
+                          quantity: 1
+                          referenceId: 'P500'
+                          price:
+                            amount: 15.55
+                            currencyUnit: 'USD'
+                          fineable: true
+                        - id: 40
+                          name: 'USB Mouse'
+                          quantity: 1
+                          referenceId: 'P502'
+                          price:
+                            amount: 10.01
+                            currencyUnit: 'USD'
+                          fineable: true
+          '400':
+            description: 'The query parameter has an invalid value'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_BAD_REQUEST
+                    message: '''ten'' is an invalid value for $top'
+                    target: '$top'
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '404':
+            description: >-
+              Resource type could not be found based on parameters provided
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_NOT_FOUND
+                    message: 'Could not find resource type'
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resourcetypes/{resourceType}/resources/{id}':
+      put:
+        summary: Create or update a resource by resource type
+        description: 'This API can be used to create or update a resource. Note: To avoid inadvertently clearing out field values of Resources and Items, make sure to first GET a full record for the resource/item you wish to change before PUTting the complete record with your desired updates.'
+        operationId: create-or-update-resource-with-resource-type
+        tags:
+          - resources
+        parameters:
+        - name: resourceType
+          in: path
+          description: 'The database ID, GUID, or name of the resource type.'
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: 'A GUID that uniquely identifies the resource.'
+          required: true
+          schema:
+            type: string
+        - name: disableStrictFieldValidation
+          in: query
+          description: 'Turns off strict field value validation when true, defaults to false when unspecified. When true the response body will contain details about any invalid field values that were not applied to the resource.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ResourceRequest'
+              example:
+                  resourceFields:
+                    - id: 15
+                      value: 'Blue'
+                    - id: 20
+                      value: 'Intel'
+                    - id: 30
+                      value: '123.45'
+                      rule:  [{ "name": "CREATE_ONLY", "value": "true" }]
+        responses:
+          '200':
+            description: 'The requested resource was successfully updated with details in the response body.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+
+          '201':
+            description: 'The requested resource was successfully created. Details may be returned in the response body if ''disableStrictFieldValidation'' was set to true in the request.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+          '204':
+            description: 'The requested resource was successfully updated.'
+          '400':
+            description: 'A required resource field was not provided.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_REQUIRED_FIELD
+                    message: 'Missing Required Fields'
+                    target: "49E748B6-FAB6-4080-8729-CF77137D89D6"
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetAddAssetSpec
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resources/{id}/items':
+      get:
+        summary: Get items by resource
+        description: >-
+          This API can be used to obtain a list of items by resource.
+
+          This API uses the Open Data specification (OData) for pagination.
+          This path is synonymous with the following path: <br/>
+          <ul>
+          <li>/materials/resourcetypes/{resourceTypeId}/resources/{id}/items</li>
+          <li>/materials/resourcetypes/{resourceTypeName}/resources/{id}/items</li>
+          </ul>
+          The path for locating resource types by name must be hierarchical: <br/>
+          <strong>Example: /api/rest/v1/materials/resourcetypes/resources/textbooks/digital%20materials/resources/{id}/items</strong>
+        operationId: get-items-by-resource
+        tags:
+          - resources
+        parameters:
+        - name: id
+          in: path
+          description: >-
+            The database ID or GUID used to look up items by resource.
+          required: true
+          schema:
+            type: string
+        - name: checkoutPatronBarcode
+          in: query
+          description: >-
+            Limit results to items checked out to the patron with the supplied barcode.
+          required: false
+          schema:
+            type: string
+        - name: checkoutPatronId
+          in: query
+          description: >-
+            Limit results to items checked out to the patron with the supplied patron id or guid.
+          required: false
+          schema:
+            type: string
+        - name: siteShortName
+          in: query
+          description: >-
+            Limit results to items associated with the site referenced by the supplied site short name.
+          required: false
+          schema:
+            type: string
+        - name: districtId
+          in: query
+          description: >-
+            Limit results by item district id.
+          required: false
+          schema:
+            type: string
+        - name: itemBarcode
+          in: query
+          description: >-
+            Limit results by item barcode.
+          required: false
+          schema:
+            type: string
+        - name: includeCurrentCheckout
+          in: query
+          description: >-
+            Includes current checkout information.  Default to false.
+          required: false
+          schema:
+            type: boolean
+        - name: modifiedSince
+          in: query
+          description: >-
+            Limit results that have been modified since a particular ISO 8601 date and time.
+          required: false
+          schema:
+            type: string
+        - name: $top
+          in: query
+          description: >-
+            The number of rows to return.  Default to 25.
+          required: false
+          schema:
+            type: integer
+        - name: $skip
+          in: query
+          description: >-
+            The number of rows to skip.  Default to 0.
+          required: false
+          schema:
+            type: integer
+        - name: $orderby
+          in: query
+          description: >-
+            Which fields to order by.  Default to ID of the resource.  This is a normative OData expression.<br/>
+            <strong>Example: barcode desc, id</strong><br/>
+            These are the columns that can be sorted by:
+            <ul>
+            <li>id</li>
+            <li>barcode</li>
+            </ul>
+          required: false
+          schema:
+            type: string
+        - name: $count
+          in: query
+          description: >-
+            This OData query parameter indicates to return the number of results instead of the actual results.
+            This changes the content-type header to text/plain and returns a simple integer as a response.
+            Paging parameters are ignored in this case.  This defaults to false.
+          required: false
+          schema:
+            type: boolean
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ItemCollection'
+                example:
+                  value:
+                    - id: 5
+                      guid: 'A050DA92-3CA5-40E3-B656-E9188BEE9B9C'
+                      barcode: '00000000000001'
+                      serialNumber: 'WKJA-0123-ACDE'
+                      status: 'available'
+                      resourceType:
+                        id: 10
+                        guid: '379119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Computers'
+                      resource:
+                        id: 201
+                        guid: '79119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Dell Inspiron 2456'
+                      site:
+                        internalId: 187
+                        guid: '32ef328d-0016-4625-82fa-d497e8e942f0'
+                      checkout:
+                        patronId: 100
+                        patronGUID: '79119AC-A2FE-4565-81B6-D900A63065DB'
+                        districtId: 'ABCDEFG'
+                        lastName: 'Doe'
+                        firstName: 'John'
+                        middleName: 'Edwardo'
+                        lastFirstMiddleName: 'Doe, John Edwardo'
+                        emailAddress1: 'johndoe@googleyeyes.com'
+                        dateOut: '2020-10-21T13:00:00.0Z'
+                        dateDue: '2020-10-27T00:00:00.0Z'
+                      itemFields:
+                        - id: 1
+                          name: 'Barcode'
+                          value: '00000000000001'
+                        - id: 15
+                          name: 'Status'
+                          value: 'Available'
+                        - id: 20
+                          name: 'Date Acquired'
+                          value: '2018-92-27T13:27:25.0Z'
+                      itemNotes:
+                        - id: 25
+                          text: 'Make sure power cord is present'
+                          urgent: true
+                        - id: 30
+                          text: 'Broken enter key'
+                          urgent: false
+                      historicalNotes:
+                        - id: 35
+                          text: 'Repaired broken hinge'
+                    - id: 6
+                      guid: '3597E573-A75F-42B7-93DE-45A8A28940B9'
+                      barcode: '00000000000002'
+                      status: 'available'
+                      resourceType:
+                        id: 10
+                        guid: '379119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Computers'
+                      resource:
+                        id: 201
+                        guid: '79119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Dell Inspiron 2456'
+                      itemFields:
+                        - id: 1
+                          name: 'Barcode'
+                          value: '00000000000002'
+                        - id: 15
+                          name: 'Status'
+                          value: 'Available'
+                        - id: 20
+                          name: 'Date Acquired'
+                          value: '2018-92-28T13:28:25.0Z'
+                      itemNotes:
+                        - id: 25
+                          text: 'Make sure power supply is present'
+                          urgent: true
+                        - id: 30
+                          text: 'Broken space key'
+                          urgent: false
+                      historicalNotes:
+                        - id: 35
+                          text: 'Repaired broken hinge'
+                  '@nextLink': '/materials/resources/{id}/items?%24top=25&%24skip=100&%24orderby=id'
+                  durationMillis: 42
+          '400':
+            description: 'The query parameter has an invalid value'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_BAD_REQUEST
+                    message: '''ten'' is an invalid value for $top'
+                    target: '$top'
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '404':
+            description: >-
+              Resource type could not be found based on parameters provided
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_NOT_FOUND
+                    message: 'Could not find resource type'
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resourcetypes/{resourceType}/items':
+      get:
+        summary: Get items by resource type
+        description: >-
+          This API can be used to obtain a list of items by resource type by database ID, GUID, or resource name.<br/>
+          The name must be a hierarchical path locating resource types.<br/>
+          <strong>Example: /api/rest/v1/materials/resourcetypes/resources/textbooks/digital%20materials/items</strong><br/>
+          This API uses the Open Data specification (OData) for pagination.
+        operationId: get-items-by-resource-type
+        tags:
+          - resources
+        parameters:
+        - name: resourceType
+          in: path
+          description: >-
+            Database ID, GUID, or resource name used to look up items by resource type.
+          required: true
+          schema:
+            type: string
+        - name: checkoutPatronBarcode
+          in: query
+          description: >-
+            Limit results to items checked out to the patron with the supplied barcode.
+          required: false
+          schema:
+            type: string
+        - name: checkoutPatronId
+          in: query
+          description: >-
+            Limit results to items checked out to the patron with the supplied patron id or guid.
+          required: false
+          schema:
+            type: string
+        - name: siteShortName
+          in: query
+          description: >-
+            Limit results to items associated with the site referenced by the supplied site short name.
+          required: false
+          schema:
+            type: string
+        - name: districtId
+          in: query
+          description: >-
+            Limit results by item district id.
+          required: false
+          schema:
+            type: string
+        - name: itemBarcode
+          in: query
+          description: >-
+            Limit results by item barcode.
+          required: false
+          schema:
+            type: string
+        - name: includeCurrentCheckout
+          in: query
+          description: >-
+            Includes current checkout information.  Default to false.
+          required: false
+          schema:
+            type: boolean
+        - name: modifiedSince
+          in: query
+          description: >-
+            Limit results that have been modified since a particular ISO 8601 date and time.
+          required: false
+          schema:
+            type: string
+        - name: $top
+          in: query
+          description: >-
+            The number of rows to return.  Default to 25.
+          required: false
+          schema:
+            type: integer
+        - name: $skip
+          in: query
+          description: >-
+            The number of rows to skip.  Default to 0.
+          required: false
+          schema:
+            type: integer
+        - name: $orderby
+          in: query
+          description: >-
+            Which fields to order by.  Default to database identifier of the item.  This is a normative OData expression.<br/>
+            <strong>Example: barcode desc, id</strong><br/>
+            These are the columns that can be sorted by:
+            <ul>
+            <li>id</li>
+            <li>barcode</li>
+            </ul>
+          required: false
+          schema:
+            type: string
+        - name: $count
+          in: query
+          description: >-
+            This OData query parameter indicates to return the number of results instead of the actual results.
+            This changes the content-type header to text/plain and returns a simple integer as a response.
+            Paging parameters are ignored in this case.  The default value is false.
+          required: false
+          schema:
+            type: boolean
+        - name: excludeFields
+          in: query
+          description: >-
+            This query paramater allows for excluding itemNotes, historicalNotes, and itemFields
+            from the results. Provides a faster query of items. Supports any or all of the following comma-seperated values:
+            <ul>
+            <li>itemNotes</li>
+            <li>historicalNotes</li>
+            <li>itemFields</li>
+            </ul>
+          required: false
+          schema:
+            type: string
+        responses:
+          '200':
+            description: >-
+              The requested information was successfully obtained.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/ItemCollection'
+                example:
+                  value:
+                    - id: 5
+                      guid: 'C55ED083-4297-4FC3-91F8-F887C9CECB30'
+                      barcode: '00000000000001'
+                      serialNumber: 'WKJA-0123-ACDE'
+                      status: 'available'
+                      resourceType:
+                        id: 10
+                        guid: '379119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Computers'
+                      resource:
+                        id: 201
+                        guid: '379119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Dell Inspiron 2456'
+                      site:
+                        internalId: 187
+                        guid: '32ef328d-0016-4625-82fa-d497e8e942f0'
+                      checkout:
+                        patronId: 100
+                        patronGUID: '79119AC-A2FE-4565-81B6-D900A63065DB'
+                        districtId: 'ABCDEFG'
+                        lastName: 'Doe'
+                        firstName: 'John'
+                        middleName: 'Edwardo'
+                        lastFirstMiddleName: 'Doe, John Edwardo'
+                        emailAddress1: 'johndoe@googleyeyes.com'
+                        dateOut: '2020-10-21T13:00:00.0Z'
+                        dateDue: '2020-10-27T00:00:00.0Z'
+                      itemFields:
+                        - id: 1
+                          name: 'Barcode'
+                          value: '00000000000001'
+                        - id: 15
+                          name: 'Status'
+                          value: 'Available'
+                        - id: 20
+                          name: 'Date Acquired'
+                          value: '2018-92-27T13:27:25.0Z'
+                      itemNotes:
+                        - id: 25
+                          text: 'Make sure power cord is present'
+                          urgent: true
+                        - id: 30
+                          text: 'Broken enter key'
+                          urgent: false
+                      historicalNotes:
+                        - id: 35
+                          text: 'Repaired broken hinge'
+                    - id: 6
+                      guid: 'B89CA935-531F-4558-9A85-470C86158A2E'
+                      barcode: '00000000000002'
+                      status: 'available'
+                      resourceType:
+                        id: 10
+                        guid: '379119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Computers'
+                      resource:
+                        id: 201
+                        guid: '79119AC-A2FE-4565-81B6-D900A63065DB'
+                        name: 'Dell Inspiron 2456'
+                      itemFields:
+                        - id: 1
+                          name: 'Barcode'
+                          value: '00000000000002'
+                        - id: 15
+                          name: 'Status'
+                          value: 'Available'
+                        - id: 20
+                          name: 'Date Acquired'
+                          value: '2018-92-28T13:28:25.0Z'
+                      itemNotes:
+                        - id: 25
+                          text: 'Make sure power supply is present'
+                          urgent: true
+                        - id: 30
+                          text: 'Broken space key'
+                          urgent: false
+                      historicalNotes:
+                        - id: 35
+                          text: 'Repaired broken hinge'
+                  '@nextLink': '/materials/resourcetypes/{resourcetypeid}/items?%24top=25&%24skip=100&%24orderby=id'
+                  durationMillis: 42
+
+
+          '400':
+            description: 'The query parameter has an invalid value'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_BAD_REQUEST
+                    message: '''ten'' is an invalid value for $top'
+                    target: '$top'
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetSearchAssets
+          '404':
+            description: >-
+              Resource type could not be found based on parameters provided
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_NOT_FOUND
+                    message: 'Could not find resource type'
+
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+  '/materials/resources/{resourceId}/items/{id}':
+      put:
+        summary: Create or update an item by resource
+        description: 'This API can be used to create or update an item. Note: To avoid inadvertently clearing out field values of Resources and Items, make sure to first GET a full record for the resource/item you wish to change before PUTting the complete record with your desired updates.'
+        operationId: create-or-update-item-by-resource
+        tags:
+          - resources
+        parameters:
+        - name: resourceId
+          in: path
+          description: 'The database ID or GUID of the resource.'
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: 'A GUID that uniquely identifies the created item.'
+          required: true
+          schema:
+            type: string
+        - name: disableStrictFieldValidation
+          in: query
+          description: 'Turns off strict field value validation when true, defaults to false when unspecified. When true the response body will contain details about any invalid field values that were not applied to the item.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: updateDuplicateByDistrictId
+          in: query
+          description: 'Determines what to do when an item is found to already exist in Destiny with the provided districtId. Defaults to false when unspecified. When true, the existing item''s GUID will be changed to the provided GUID in the path.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: updateDuplicateByBarcode
+          in: query
+          description: 'Determines what to do when an item is found to already exist in Destiny with the provided barcode. Defaults to false when unspecified. When true, the existing item''s GUID will be changed to the provided GUID in the path.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemRequest'
+              example:
+                  resourceId: F7449399-97F4-4780-9EFD-136E16871CCA
+                  siteId: 11BAC758-4C54-4451-BD2A-60BBD31681C0
+                  itemFields:
+                    - id: 1
+                      value: '00000000000001'
+                    - id: 15
+                      value: 'Available'
+                    - id: 20
+                      value: '2018-92-27T13:27:25.0Z'
+                    - id: 30
+                      value: '123.45'
+                      rule:  [{ "name": "CREATE_ONLY", "value": "true" }]
+        responses:
+          '200':
+            description: 'The requested item was successfully updated with details in the response body. Use of updateDuplicateByDistrictId or updateDuplicateByBarcode will also be reported in the response body.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+
+          '201':
+            description: 'The requested item was successfully created. Details may be returned in the response body if ''disableStrictFieldValidation'' was set to true in the request.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+          '204':
+            description: 'The requested item was successfully updated.'
+          '400':
+            description: 'A required item field was not provided.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_REQUIRED_FIELD
+                    message: 'Missing Required Fields'
+                    target: "49E748B6-FAB6-4080-8729-CF77137D89D6"
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetAddAsset
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+      patch:
+        summary: Patch item by resource
+        description: 'This API can be used to create or update an item.'
+        operationId: patch-item-by-resource
+        tags:
+          - resources
+        parameters:
+        - name: resourceId
+          in: path
+          description: 'The database ID or GUID of the resource.'
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: 'A GUID that uniquely identifies the created item.'
+          required: true
+          schema:
+            type: string
+        - name: disableStrictFieldValidation
+          in: query
+          description: 'Turns off strict field value validation when true, defaults to false when unspecified. When true the response body will contain details about any invalid field values that were not applied to the item.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: updateDuplicateByDistrictId
+          in: query
+          description: 'Determines what to do when an item is found to already exist in Destiny with the provided districtId. Defaults to false when unspecified. When true, the existing item''s GUID will be changed to the provided GUID in the path.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        - name: updateDuplicateByBarcode
+          in: query
+          description: 'Determines what to do when an item is found to already exist in Destiny with the provided barcode. Defaults to false when unspecified. When true, the existing item''s GUID will be changed to the provided GUID in the path.'
+          required: false
+          schema:
+            type: boolean
+            default: false
+        requestBody:
+          required: true
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemRequest'
+              example:
+                  resourceId: F7449399-97F4-4780-9EFD-136E16871CCA
+                  siteId: 11BAC758-4C54-4451-BD2A-60BBD31681C0
+                  itemFields:
+                    - id: 1
+                      value: '00000000000001'
+                    - id: 15
+                      value: 'Available'
+                    - id: 20
+                      value: '2018-92-27T13:27:25.0Z'
+                    - id: 30
+                      value: '123.45'
+                      rule:  [{ "name": "CREATE_ONLY", "value": "true" }]
+        responses:
+          '200':
+            description: 'The requested item was successfully updated with details in the response body.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+
+          '201':
+            description: 'The requested item was successfully created. Details may be returned in the response body if ''disableStrictFieldValidation'' was set to true in the request.'
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/CreateUpdateDetail'
+          '204':
+            description: 'The requested item was successfully updated.'
+          '400':
+            description: 'A required item field was not provided.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_REQUIRED_FIELD
+                    message: 'Missing Required Fields'
+                    target: "49E748B6-FAB6-4080-8729-CF77137D89D6"
+          '401':
+            description: 'The access token is invalid, expired, or missing.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_MISSING_INVALID_ACCESS_TOKEN
+                    message: 'Access token is missing or invalid'
+                    target: accessToken
+          '403':
+            description: >-
+              Insufficient permissions to make this API call.  Make sure the Destiny Administrator has given resources permissions to the application and/or user.
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INSUFFICIENT_RIGHTS_TO_API
+                    message: 'Insufficient permissions to access API'
+                    target: CatAssetAddAsset
+          '500':
+            description: 'This is an unexpected fault/error in the server.'
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Error'
+                example:
+                  error:
+                    code: CODE_INTERNAL_SERVER_ERROR
+                    message: 'Something bad happened in the server'
+                    logId: kxEtz
+components:
+  securitySchemes:
+    authHeader:
+      description: 'Put the "accessToken" in the "Authorization" bearer header'
+      type: http
+      scheme: bearer
+    accessToken:
+      description: 'Put the "accessToken" in a query parameter'
+      type: apiKey
+      name: accessToken
+      in: query
+  schemas:
+    BriefResourceType:
+      properties:
+        id:
+          type: number
+          description: 'This identifies the resource type in the database.'
+        guid:
+          type: string
+          description: 'This identifies the resource across databases.'
+        name:
+          type: string
+          description: 'The name of the resource type.'
+        softwareResourceTypeIdAssignment:
+          type: number
+          description: 'If this resource type represents software, the id of the assigned resource type.'
+        nameFields:
+          type: array
+          items:
+            properties:
+              id:
+                type: number
+        parent:
+          type: object
+          properties:
+            id:
+              type: number
+            guid:
+              type: string
+            name:
+              type: string
+        children:
+          type: array
+          items:
+            properties:
+              id:
+                type: number
+              guid:
+                type: string
+              name:
+                type: string
+
+    ResourceType:
+      properties:
+        id:
+          type: number
+          description: 'This identifies the resource type in the database.'
+        guid:
+          type: string
+          description: 'This identifies the resource type across databases.'
+        name:
+          type: string
+          description: 'The name of the resource type.'
+        softwareResourceTypeIdAssignment:
+          type: number
+          description: 'If this resource type represents software, the id of the assigned resource type.'
+        nameFields:
+          type: array
+          items:
+            properties:
+              id:
+                type: string
+        resourceFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceTypeField'
+        itemFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceTypeField'
+        children:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceTypeReference'
+        parent:
+          $ref: '#/components/schemas/ResourceTypeReference'
+
+    ResourceTypeField:
+      properties:
+        id:
+          type: number
+          description: 'This identifies the resource field in the database.'
+        name:
+          type: string
+          description: 'The name of the resource type field.'
+        fieldType:
+          type: string
+          description: 'This defines the field as a resource or item field.'
+          enum: [resource, item]
+        dataType:
+          type: string
+          description: 'This is the data type of the value stored in the field.'
+          enum: [currency, date, dropdown, memo, number, text, year, checkbox]
+        systemDefined:
+          type: boolean
+          description: 'A field designed by the system that cannot be changed.'
+        editable:
+          type: boolean
+          description: 'The value stored in this field can be changed.'
+        required:
+          type: boolean
+          description: 'A resource must have this field defined.'
+        options:
+          type: array
+          description: 'This is a list of items for the dropdown data type'
+          items:
+            type: object
+            properties:
+              id:
+                type: number
+                description: 'This identifies the dropdown item'
+              name:
+                type: string
+                description: 'The name of the dropdown item'
+
+    Resource:
+      properties:
+        id:
+          type: number
+          description: 'This identifies the resource in the database.'
+        guid:
+          type: string
+          description: 'This identifies the resource across databases.'
+        name:
+          type: string
+          description: 'This is the description of the resource.'
+        resourceType:
+          $ref: '#/components/schemas/ResourceTypeReference'
+        resourceFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceFieldValue'
+        items:
+          type: object
+          properties:
+            barcodedCount:
+              type: number
+              description: 'This is the number of barcoded items.'
+            unbarcodedCount:
+              type: number
+              description: 'This is the number of unbarcoded items.'
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/Component'
+
+    ResourceRequest:
+      properties:
+        resourceTypeId:
+          type: string
+          description: 'The database ID or GUID of the resource type.'
+        resourceFields:
+          type: array
+          description: 'A list of resource fields.'
+          items:
+            type: object
+            properties:
+              id:
+                type: number
+                description: 'The database ID of the resource field.'
+              value:
+                type: string
+                description: 'The value of the resource field.'
+              rules:
+                type: array
+                description: 'An optional list of resource field rules. Adding a CREATE_ONLY rule with a ''true'' value will leave the existing resource field value as is, if the targeted resource already exists. That is this field value will only be applied if this resource request actually creates a new resource.'
+                items:
+                  $ref: '#/components/schemas/Rule'
+    ItemRequest:
+      properties:
+        resourceId:
+          type: string
+          description: 'The database ID or GUID of the resource.'
+        siteId:
+          type: string
+          description: 'The database ID or GUID of the site.'
+        itemFields:
+          type: array
+          description: 'A list of item fields.'
+          items:
+            type: object
+            properties:
+              id:
+                type: number
+                description: 'The database ID of the item field.'
+              value:
+                type: string
+                description: 'The value of the item field.'
+              rules:
+                type: array
+                description: 'An optional list of item field rules. Adding a CREATE_ONLY rule with a ''true'' value will leave the existing item field value as is, if the targeted item already exists. That is this field value will only be applied if this item request actually creates a new item.'
+                items:
+                  $ref: '#/components/schemas/Rule'
+    Rule:
+      properties:
+        name:
+          type: string
+          enum: [CREATE_ONLY]
+          description: The name of the rule.
+        value:
+          type: string
+          description: The value of the rule.
+    ItemStatusRequest:
+      properties:
+        value:
+          type: string
+          description: The item status name.
+      example:
+        'value': 'No Longer in Use'
+    DigitalContent:
+      properties:
+        id:
+          type: number
+          description: 'This identifies the digital content in the database.'
+        description:
+          type: string
+          description: 'The user-assigned name of the digital content.'
+        contentType:
+          type: string
+          description: 'The http-header content type (ex: application/pdf). (applies to files only)'
+        fileExtension:
+          type: string
+          description: 'The file extension (ex: .pdf). (applies to files only)'
+        type:
+          type: string
+          description: 'This is the type of digital content, file or url.'
+          enum: [file, url]
+        externalURL:
+          type: string
+          description: 'This is the URL of the content when not hosted by destiny. (applies to URLs only)'
+        displaysInMyInfo:
+          type: boolean
+          description: 'This indicates if this shows up in My Info screen or API.'
+
+    DigitalContentCollection:
+      properties:
+        value:
+          type: array
+          items:
+            $ref: '#/components/schemas/DigitalContent'
+
+    ResourceTypeReference:
+      properties:
+        id:
+          type: number
+          description: 'This identifies the resource type in the database.'
+        guid:
+          type: string
+          description: 'This identifies the resource type across databases.'
+        name:
+          type: string
+          description: 'The name of the resource type.'
+
+    IdValue:
+      properties:
+        id:
+          type: number
+          description: 'This identifies the resource type field id in the database.'
+
+    ResourceFieldValue:
+      properties:
+        id:
+          type: number
+          description: 'This identifies the resource field in the database.'
+        name:
+          type: string
+          description: 'The name of the resource field.'
+        value:
+          type: string
+          description: 'The value of the resource field.'
+
+    Component:
+      properties:
+        id:
+          type: number
+          description: 'This identifies the component in the database.'
+        name:
+          type: string
+          description: 'The name of the component.'
+        quantity:
+          type: number
+          description: 'This is the quantity of this component attached to the resource.'
+        referenceId:
+          type: string
+          description: 'This is the external referential identifier.'
+        price:
+          type: object
+          properties:
+            amount:
+              type: number
+              description: 'This is the price of the component.'
+            currencyUnit:
+              type: string
+              description: 'This is a three digit code identifying what currency was used to assess the fine.'
+        fineable:
+          type: boolean
+          description: 'This indicates if the component is fineable.'
+
+    Item:
+      properties:
+        id:
+          type: integer
+          description: 'This identifies the item in the database.'
+        guid:
+          type: string
+          description: 'This identifies the item across databases.'
+        barcode:
+          type: string
+          description: 'The barcode of the item.'
+        status:
+          type: string
+          description: 'The status of the item.'
+          enum: [available, checked out, on hold, loaned out, on order, in processing, out for repairs, in transit, returning,
+          in use, returned to vendor, no longer in use, available for parts, approved for disposal, ready for disposal,
+          retired, stolen, lost, out, unknown]
+        resourceType:
+          $ref: '#/components/schemas/ResourceTypeReference'
+        itemFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ResourceFieldValue'
+        itemNotes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: 'This identifies the note in the database.'
+              text:
+                type: string
+                description: 'The contents of the note.'
+              urgent:
+                type: boolean
+                description: 'This indicates if the note is urgent.'
+        historicalNotes:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+                description: 'This identifies the historical note in the database.'
+              text:
+                type: string
+                description: 'The contents of the historical note.'
+
+    ResourceCollection:
+      properties:
+        value:
+          type: array
+          items:
+            $ref: '#/components/schemas/Resource'
+        '@nextLink':
+          type: string
+          description: >-
+            This is a relative path to the next page.
+        durationMillis:
+          type: integer
+          description: 'The amount of time it took for this query to execute in milliseconds from the server''s perspective'
+
+    ItemCollection:
+      properties:
+        value:
+          type: array
+          items:
+            $ref: '#/components/schemas/Item'
+        '@nextLink':
+          type: string
+          description: >-
+            This is a relative path to the next page.
+        durationMillis:
+          type: integer
+          description: 'The amount of time it took for this query to execute in milliseconds from the server''s perspective'
+
+    CreateUpdateDetail:
+      properties:
+        message:
+          type: string
+          description: 'The detail description'
+        type:
+          type: string
+          enum: [INFO, WARNING, ERROR]
+          description: 'The severity level of the detail'
+      example:
+        message: 'Field id: 123, could not be assigned value: ''invalid value'', it will be left blank.'
+        type: 'WARNING'
+
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: 'Identifies the type of errors that could happen when calling this API.'
+              enum:
+                - CODE_MISSING_TOKEN
+                - CODE_INVALID_TOKEN
+                - CODE_EXPIRED_TOKEN
+                - CODE_UNKNOWN_APPID
+                - CODE_CONTEXT_NOT_FOUND
+                - CODE_CONTEXT_REQUIRED_IN_CONSORTIUM
+                - CODE_INVALID_PATH
+                - CODE_INSUFFICIENT_RIGHTS_TO_API
+                - CODE_NOT_FOUND
+                - CODE_BAD_REQUEST
+                - CODE_RESOURCE_NOT_FOUND
+                - CODE_TEMPLATE_NOT_FOUND
+                - CODE_RESOURCE_DESCRIPTIONS_NOT_MATCH
+                - CODE_RESOURCE_TYPES_NOT_MATCH
+            message:
+              type: string
+              description: 'A human readable message about the error.'
+            target:
+              type: string
+              description: 'Field, parameter or path associated with the error.'
+            logId:
+              type: string
+              description: 'A unique value generated and written to the Destiny log file in association with the error.'

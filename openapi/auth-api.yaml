@@ -1,0 +1,434 @@
+openapi: 3.0.0
+info:
+  version: 1.0.0
+  title: Destiny API -- Authentication
+servers:
+  - url: "/api/v{apiVersion}/rest/context/{contextName}"
+    variables:
+      apiVersion:
+        default: "1"
+        description: Major version
+      contextName:
+        default: destiny
+        description: >-
+          This identifies which Destiny district needs to be accessed.  If the
+          Destiny server being accessed does not host multiple districts, the
+          value for this can be set to "destiny"
+  - url: "/api/v{apiVersion}/rest"
+    variables:
+      apiVersion:
+        default: "1"
+        description: Major version of the API being used
+paths:
+  "/auth/grants":
+    get:
+      summary: Used exclusively by the Follett AASP server to obtain grants for API access.
+      description: >-
+        This API is exclusively used by Follett and specialized for usage
+        by the AASP server for creating access tokens, which can be used for Follett
+        applications and services to access Destiny.
+
+        When an application makes a request to AASP to get an access token for
+        Destiny, this API is invoked by AASP to obtain grants (permissions) and
+        principal (user) information.  This information is digitally signed into
+        the access token by AASP so that Destiny can trust this information when
+        that token is provided as part of an API call.  When a Destiny API is
+        invoked, the grant and principal information of the access token are
+        used to ensure proper access to the given API before proceeding
+        with the execution.
+
+        <br><br> Permissions are gathered by looking both at the application
+        identifiers (appId, appFamilyIds) and the principal (principalIds,
+        subcontextId).  At least one kind of application identifier must be
+        specified, and the Destiny Administrator must have configured a service
+        account for that identifier.  The principal is found by using both the
+        principalId and subcontextId to find the user and the associated
+        permissions in the database.  The final permissions returned by this
+        API are the INTERSECTION of permissions between the application and
+        the principal.  This means that a required permission for the API
+        must be given to both the application and the user by the Destiny administrator.
+
+        <br><br> An appId is required and zero or more appFamilyIds can be included.
+        Destiny will attempt to match an API account using the appId, and then each appFamilyId.
+        After matching the appId and appFamilyIds the permissions for ALL
+        are combined in a UNION before being combined in an INTERSECTION with
+        the principal permissions to produce the final grants.
+
+        <br><br> A principal is not required to make an API call.  If no
+        principal identifier is specified, then the grants are just computed
+        based upon the application identifiers and no principal identifier will be returned.
+      operationId: getGrants
+      tags:
+        - grants
+      parameters:
+        - name: appId
+          in: query
+          description: >-
+            The AASP application identifier of the application or service to
+            which these grants apply.  This is a unique identifier which
+            represents a specific application.
+          required: false
+          schema:
+            type: string
+        - name: appFamilyIds
+          in: query
+          description: >-
+            The AASP application group identifier of applications or services to
+            which these grants apply.  An application or service can be part of
+            zero or more app families.
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: principalIds
+          in: query
+          description: >-
+            An array of zero or more identifiers that an be used to lookup
+            grants for the User in Destiny represented by the principal.
+            <br><strong>Format - app.appId.userGUID</strong>
+          required: false
+          schema:
+            type: array
+            items:
+              type: string
+        - name: subcontextId
+          in: query
+          description: >-
+            An identifier used to further limit location or scope of the grants
+            being retrieved.  In Destiny this is the site GUID.
+            This may be provided in one of two formats.<br><strong>Format -<br>
+            app.appId.siteGUID<br>OR<br>context:contextName|site:siteGUID</strong>
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: >-
+            A response object containing principal identifer, grants and additional
+            information which will be placed into the access token.  An empty array
+            of grants can be returned if the application or principal can be
+            found, but does not have any Destiny permissions assigned.  The formatting of
+            the array is at the discretion of the API owner.  AASP will only ensure that
+            it is placed onto the access token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Grants"
+        "400":
+          description: >-
+            An appId or appFamilyIds were not specified.  At least one of these is
+            required, but not both.
+          content:
+            application/json:
+              schema:
+                $ref: "error-model.yaml#/components/schemas/Error"
+              example:
+                error:
+                  code: APPID_OR_FAMILY_REQUIRED
+                  message: "The appId or appFamilyId is required"
+                  logId: "kxEtz"
+        "401":
+          description: >-
+            If the access token is invalid, expired or missing (CODE_INVALID_TOKEN)
+            If a principalId is specified but not found (CODE_PRINCIPALID_NOT_FOUND)
+          content:
+            application/json:
+              schema:
+                $ref: "error-model.yaml#/components/schemas/Error"
+              example:
+                error:
+                  code: MISSING_INVALID_ACCESS_TOKEN
+                  message: "Access token is missing or invalid"
+                  target: "accessToken"
+                  logId: "kxEtz"
+        "403":
+          description: >-
+            The Follett AASP server that Destiny is connected to is the only
+            permitted consumer of this API.  Any other attempt to access this
+            API will result in a 403.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: INSUFFICIENT_RIGHTS_TO_API
+                  message: "Insufficient permissions to access API"
+                  target: "FinesPayLibrary"
+                  logId: "kxEtz"
+        "404":
+          description: >-
+            If an appId or appFamily could not be found or if none of the
+            specified principalId(s) are found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: APPLICATION_CREDENTIAL_NOT_FOUND
+                  message: "Could not locate application credential for (destiny-EADED)"
+                  logId: "kxEtz"
+        "500":
+          description: "This is an unexpected fault/error in the server"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: BaseException
+                  message: "Something bad happened in the server"
+                  logId: "aEbdf"
+  "/auth/accessToken":
+    post:
+      summary: Obtain an access token to be used for making calls into the Destiny API
+      description: >-
+        Use this API to obtain an access token from Destiny if your API Account was setup with the client credential option.
+        The Destiny administrator will have generated a client id and secret which must be shared with the party accessing the Destiny API.
+        The key and secret should not be shared with anybody else, and care should be used to guard it from discovery by other parties.
+
+        <br><br>If the Destiny API account was setup using either a "Follett App ID" or "Follett App Family", then this service should not be used to obtain
+        an access token.  The Follett hosted API should be used to access the Destiny API otherwise.
+
+        <br><br>This API will return a JSON Web Token (JWT) access token if the given credentials are accepted.  This JWT access token must be included as an authorization
+        header (Ex: "Authorization: Bearer <access_token>") or as a query parameter (Ex: "&accessToken=<access_token>") in any subsequent API calls.  Upon expiration of the token
+        any subsequent API call will result in a 401 (Unauthorized) server response.  In such a case a new access token will need to be generated to continue.
+      operationId: getAccessToken
+      tags:
+        - token
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                grant_type:
+                  description: "Set this to 'client_credentials'."
+                  type: string
+                client_id:
+                  description: "This should be the 'Client ID' from the Destiny API account."
+                  type: string
+                client_secret:
+                  description: "This should be the 'Client Secret' from the Destiny API account."
+                  type: string
+      responses:
+        "200":
+          description: >-
+            'A bearer type access token will be returned along with time until the token expires.'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccessToken"
+        "400":
+          description: >-
+            If one of the required form parameters isn't specified.
+          content:
+            application/json:
+              schema:
+                $ref: "error-model.yaml#/components/schemas/Error"
+              example:
+                error: invalid_request
+                error_description: Missing parameter "grant_type"
+        "401":
+          description: >-
+            If the key/secret credentials are invalid, or grant_type is not set to "client_credentials".
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OAuthError"
+              example:
+                error: invalid_client
+                error_description: "The client_id '9/Mq/GVI6bY5Y9HC30yhkzDkCLlCjO2=' is invalid"
+        "500":
+          description: "This is an unexpected fault/error in the server"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: BaseException
+                  message: "Something bad happened in the server"
+                  logId: "aEbdf"
+
+  "/auth/publickey/{name}":
+    get:
+      summary: Used exclusively by Follett Applications to obtain a Destiny public key.
+      description: >-
+        This API is exclusively used by Follett Applications to get the Destiny public key for the purpose of verifying signed messages.
+      operationId: getDestinyPublicKey
+      tags:
+        - publickey
+      parameters:
+        - name: name
+          in: path
+          description: >-
+            The name associated with the public key. Name is the primary identifier.
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: >-
+            A response object containing the Base 64 encoded public key.
+          content:
+            text/plain:
+              schema:
+                type: string
+                example: YW55IGNhcm5hbCBwbGVhc3VyZQ==...
+        "401":
+          description: >-
+            If the access token is invalid, expired or missing (CODE_INVALID_TOKEN)
+            If the consumer is not a Follett Application
+          content:
+            application/json:
+              schema:
+                $ref: "error-model.yaml#/components/schemas/Error"
+              example:
+                error:
+                  code: MISSING_INVALID_ACCESS_TOKEN
+                  message: "Access token is missing or invalid"
+                  target: "accessToken"
+                  logId: "kxEtz"
+        "404":
+          description: >-
+            If a public key with the specified name could not be found.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: APPLICATION_CREDENTIAL_NOT_FOUND
+                  message: "Could not locate application credential for (destiny-EADED)"
+                  logId: "kxEtz"
+        "500":
+          description: "This is an unexpected fault/error in the server"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              example:
+                error:
+                  code: BaseException
+                  message: "Something bad happened in the server"
+                  logId: "aEbdf"
+components:
+  securitySchemes:
+    authHeader:
+      description: 'Put the "accessToken" in the "Authorization" bearer header.'
+      type: http
+      scheme: bearer
+    accessToken:
+      description: 'Put the "accessToken" in a query parameter.'
+      type: apiKey
+      name: accessToken
+      in: query
+  schemas:
+    Grants:
+      required:
+        - principalId
+        - grants
+      properties:
+        principalId:
+          type: string
+          description: >-
+            This is the primary indentifier that the user will be known as in Destiny.  This identifier must be globally unique, non-changing and never reused.
+        grants:
+          type: array
+          items:
+            type: string
+          description: >-
+            Array of identifiers by which the principal is known in Destiny.  Destiny can format the strings of this
+            array in any way to meet the needs at hand.  AASP will only ensure that these grants are placed onto the
+            access token along with the other provided information.  An empty array here will still result in an access
+            token being created.
+        extraClaims:
+          type: string
+          description: "Collection of key/value strings which will be included in the construction of the access token."
+
+      example:
+        principalId: "FSS.destiny-E5A2.fdaaf99f-f37e-4ff4-b45f-464c25df3eba"
+        grants:
+          - ViewAnyFines
+          - FinesWaiveLibrary
+        extraClaims:
+          /destiny/siteGuid: "32ef328d-0016-4625-82fa-d497e8e942f0"
+          /destiny/appFamilyId: "FOLLETT_CLOUD"
+    AccessToken:
+      required:
+        - access_token
+        - token_type
+        - expires_in
+      properties:
+        access_token:
+          type: string
+          description: "The access token that should be used to invoke Destiny APIs."
+        token_type:
+          type: string
+          description: 'This is always set to "bearer".'
+        expires_in:
+          type: integer
+          description: "How long in seconds that the token is expected to be live."
+      example:
+        access_token: "eyJhbGciOiJSUzI1NiJ9.eyJwcmluY2lwYWxHcmFudHMiOiJQbGFjZVJlc2VydmVGb3JTZWxmLFBsYWNlSG9sZEZvclNlbGYsUGxhY2VSZXNlcnZlRm9yU2VsZlJlc291cmNlIiwic2lnbmF0dXJlIjoiSTJ1bFczeHV5LVRoa2xnZEtfQW9vSHNPY0RTUmpsRUdTeHhWU1R3UmVhdyIsInNlcnZpY2VUeXBlIjoiREVTVElOWSIsImV4cGlyeSI6IjIwMTktMDQtMTVUMTY6MDU6MzYuNTgwWiIsImlzcyI6ImRlc3Rpbnk6YXBpa2V5OlBST1ZJREVSX0lEIiwiaWF0IjoxNTU1MzQwNzM3LCJhdWQiOiJkZXN0aW55OmFwaWtleTpqVFFfMy9CZmNkdFNTQm1Ma3dqOXpiOXk3Nkl5cjMuPSIsImV4cCI6MTU1NTM0NDMzN30.MHS5gepcnYEu_l3BjTb95WMCgbOC0DUIQHAilDnlq1A6bnvF3SqWxOj7gqks5_fNNhWHixU_NNHS4SzRJZ0-twthCPLr-pEttZb23FiZTRfFkJAp4U_wwm_qUzNX4pK7LQIDB5K1BD0HUoAr9F3hS2b4icEN9hhWkodHroj8c9ir9hFS0509IDYoYwzhn7opqnPrmDJJt04MpmTUf6F0dZft38nx1yPfMWJIVpZTjxyr0aoJCDUzVlxCNAfL1CnF43fktJMgBtMxnyqTrvBjALsDeBW3Yt7Ed66HuQmVQaNMnGeWQsolZbpU3_TcYcnCQ-wdTNdgKie5Qg-gMfjzwQ"
+        token_type: "Bearer"
+        expires_in: 3600
+    OAuthError:
+      required:
+        - error
+      properties:
+        error:
+          type: string
+          description: "This is an OAuth2 error code."
+          enum:
+            [
+              invalid_request,
+              invalid_client,
+              invalid_grant,
+              invalid_scope,
+              unauthorized_client,
+              unsupported_grant_type,
+            ]
+        error_description:
+          type: string
+          description: "A human readable version of the OAuth2 error code."
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              description: "Identifies the type of errors that could happen when calling this API."
+              enum:
+                - CODE_MISSING_TOKEN
+                - CODE_INVALID_TOKEN
+                - CODE_UNKNOWN_APPID
+                - CODE_CONTEXT_NOT_FOUND
+                - CODE_CONTEXT_REQUIRED_IN_CONSORTIUM
+                - CODE_UNAUTHORIZED_ACCESS
+                - CODE_INSUFFICIENT_RIGHTS_TO_API
+                - CODE_APPID_OR_APPFAMILYID_REQUIRED
+                - TOKEN_APPID_MISMATCH_WITH_AASP_SERVER_APPID
+                - CODE_PRINCIPALID_NOT_FOUND
+                - CODE_PRINCIPAL_NO_SITE_ACCESS
+                - CODE_PRINCIPAL_SITE_ACCESS_NOT_VALIDATED
+                - CODE_INVALID_PATH
+                - CODE_SITE_VALUE_NOT_FOUND
+                - CODE_INTERNAL_SERVER_ERROR
+            message:
+              type: string
+              description: "A human readable message about the error."
+            target:
+              type: string
+              description: "Field, parameter or path associated with the error"
+            logId:
+              type: string
+              description: "A unique value generated and written to the Destiny log file in association with the error."

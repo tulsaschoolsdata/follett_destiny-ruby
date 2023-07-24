@@ -1,0 +1,278 @@
+openapi: 3.0.0
+info:
+  version: 1.1.0
+  title: Destiny API -- Sites
+servers:
+  - url: "/api/v{apiVersion}/rest/context/{contextName}"
+    variables:
+      apiVersion:
+        default: "1"
+        description: Major version
+      contextName:
+        default: destiny
+        description: >-
+          This identifies which Destiny district needs to be accessed.  If the
+          Destiny server being accessed does not host multiple districts, the
+          value for this can be set to "destiny"
+  - url: "/api/v{apiVersion}/rest"
+    variables:
+      apiVersion:
+        default: "1"
+        description: Major version of the API being used
+paths:
+  "/sites/{id}":
+    get:
+      summary: "Look up a site"
+      description: >-
+        Look up a site within the district
+      operationId: getSite
+      tags:
+        - sites
+      parameters:
+        - name: id
+          in: path
+          description: >-
+            The identifier used to look up the site.  This can be either the "guid" or the "internalId"
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: >-
+            Information about the site
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Site"
+              example:
+                guid: "677be895-a36c-4510-b255-3c4957e7c7b5"
+                internalId: 267
+                fscCustomerNumber: "12345"
+                district:
+                  contextName: "ny_queens"
+                  guid: abcd-efgh
+                  districtName: "my name"
+                  fscCustomerNumber: "98765"
+                stateIdentifier: "S-39475904"
+                name: "Elmwood Elementary"
+                shortName: "ELM"
+                zone:
+                  name: "Queens County"
+                shortNameAliases:
+                  - "ELM"
+                  - "S21"
+                  - "Elmwood"
+                librarySite: true
+                mediaSite: false
+                textbookSite: false
+                resourceSite: true
+                districtWarehouse: false
+                districtAdvancedBooking: false
+                siteType:
+                  id: 117000
+                  name: "Elementary Schools"
+                  priorityOrder: 10
+                rosterEnabled: true
+                portalEnabled: false
+                utcOffset: "-05:00"
+        "401":
+          description: "If the access token is invalid, expired or missing"
+          content:
+            application/json:
+              schema:
+                $ref: "error-model.yaml#/components/schemas/Error"
+              example:
+                code: CODE_INVALID_TOKEN
+                message: Token is invalid
+                target: /sites/1918
+                logId: kxEtz
+        "404":
+          description: "The site could not be found using the given identifier"
+          content:
+            application/json:
+              schema:
+                $ref: "error-model.yaml#/components/schemas/Error"
+              example:
+                code: NOT_FOUND
+                message: Site not found
+
+        "500":
+          description: This is an unexpected fault/error in the server
+          content:
+            application/json:
+              schema:
+                $ref: "error-model.yaml#/components/schemas/Error"
+              example:
+                code: BaseException
+                message: Something bad happened in the server
+                logId: kxEtz
+  "/sites":
+    get:
+      summary: "Return a list of all sites"
+      description: >-
+        Return a list of all sites within the district
+      operationId: getAllSites
+      tags:
+        - sites
+      parameters:
+        - name: productTypes
+          in: query
+          description: >-
+            Limit results to sites of one or more product types. For example, to limit by more than one product type: productTypes=resource&productTypes=library
+          required: false
+          schema:
+            type: string
+            enum: [library, media, resource, textbook]
+      responses:
+        "200":
+          description: >-
+            List of all sites within the district
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SiteCollection"
+              example:
+                district:
+                  name: "McHenry School District"
+                  guid: "C1AE3F60-AA14-4E63-B257-A3ACAD2175C7"
+                value:
+                  - guid: "507a74f7-1025-4141-b2fb-4d06b6bc43ee"
+                    siteName: "Lincoln Elementary School"
+                    siteType:
+                      id: 1245
+                      name: "Elementary Schools"
+                      priorityOrder: 1
+                    librarySite: true
+                    mediaSite: false
+                    resourceSite: true
+                    textbookSite: false
+                    districtWarehouse: false
+                    districtAdvancedBooking: false
+                    portalEnabled: false
+                  - guid: "e07c9647-0df3-4f1f-8272-c996bbc251dc"
+                    siteName: "Washington Middle School"
+                    siteType:
+                      id: 1246
+                      name: "Middle Schools"
+                      priorityOrder: 2
+                    librarySite: false
+                    mediaSite: false
+                    resourceSite: true
+                    textbookSite: false
+                    districtWarehouse: false
+                    districtAdvancedBooking: false
+                    portalEnabled: false
+                durationMillis: 267
+
+        "401":
+          description: "If the access token is invalid, expired or missing"
+          content:
+            application/json:
+              schema:
+                $ref: "error-model.yaml#/components/schemas/Error"
+              example:
+                code: CODE_INVALID_TOKEN
+                message: Token is invalid
+                target: /sites
+                logId: kxEtz
+
+        "500":
+          description: This is an unexpected fault/error in the server
+          content:
+            application/json:
+              schema:
+                $ref: "error-model.yaml#/components/schemas/Error"
+              example:
+                code: BaseException
+                message: Something bad happened in the server
+                logId: kxEtz
+components:
+  securitySchemes:
+    authHeader:
+      description: Put the "accessToken" in the "Authorization" bearer header
+      type: http
+      scheme: bearer
+    accessToken:
+      description: Put the "accessToken" in a query parameter
+      type: apiKey
+      name: accessToken
+      in: query
+  schemas:
+    Site:
+      properties:
+        guid:
+          type: string
+        internalId:
+          type: integer
+        fscCustomerNumber:
+          type: string
+        district:
+          type: object
+          properties:
+            contextName:
+              type: string
+            guid:
+              type: string
+            districtName:
+              type: string
+            fscCustomerNumber:
+              type: string
+            portalEnabled:
+              type: boolean
+        stateIdentifier:
+          type: string
+        name:
+          type: string
+        shortName:
+          type: string
+        zone:
+          type: object
+          properties:
+            name:
+              type: string
+        shortNameAliases:
+          type: array
+          items:
+            type: string
+        librarySite:
+          type: boolean
+        mediaSite:
+          type: boolean
+        textbookSite:
+          type: boolean
+        resourceSite:
+          type: boolean
+        districtWarehouse:
+          type: boolean
+        districtAdvancedBooking:
+          type: boolean
+        siteType:
+          type: object
+          properties:
+            id:
+              type: integer
+            name:
+              type: string
+            priorityOrder:
+              type: integer
+        rosterEnabled:
+          type: boolean
+        portalEnabled:
+          type: boolean
+        utcOffset:
+          type: string
+          description: Time offset from UTC in hours and minutes
+    SiteCollection:
+      properties:
+        value:
+          type: array
+          items:
+            type: object
+            properties:
+              guid:
+                type: string
+              name:
+                type: string
+        durationMillis:
+          type: integer
+          description: "The amount of time it took for this query to execute in milliseconds from the server's perspective"
